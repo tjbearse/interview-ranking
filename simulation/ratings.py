@@ -3,6 +3,7 @@ import numpy as np
 import math
 import sys
 from graphviz import Digraph
+import matplotlib.pyplot as plt
 
 NInterviewer = 50
 NInterviewPerLoop = 3
@@ -13,7 +14,7 @@ InterviewerInconsistentDistr = (0, 4)
 CandidateDistr = (100, 7)
 
 def main():
-    np.random.seed(1)
+    # np.random.seed(1)
     interviewers = list([Interviewer() for i in range(NInterviewer)])
     candidates = [getCandidate() for i in range(NCandidate)]
     comparisons = []
@@ -34,24 +35,27 @@ def main():
            sys.stderr.write("stability achieved in %d cycles\n" % i)
            break
     graph2Digraph(graph)
-    printScoreComparison(interviewers, graph)
+    graphScores(buildScoreComparison(interviewers, graph))
 
-def printScoreComparison(interviewers, graph):
+def graphScores(scores):
+    plt.scatter(scores['rating'], scores['stddev'])
+    plt.xlabel('rating')
+    plt.ylabel('stddev')
+    plt.show()
+def buildScoreComparison(interviewers, graph):
     validCheck = [ (
             i.n,
-            int(i.bar),
+            (i.bar - InterviewerDistr[0])/float(InterviewerDistr[1]),
             graph[i.n].v,
             len(graph[i.n].e)
         ) for i in interviewers if i.n in graph ]
-    validCheck = map(lambda x: "%d\t%.3f\t%.3f\t%d" % (
-            x[0],
-            (x[1] - InterviewerDistr[0])/float(InterviewerDistr[1]),
-            x[2],
-            x[3],
-        ),
-        sorted(validCheck, key=lambda t: t[1])
-    )
-    print "interv\tstddev\trating\tn\n" + "\n".join(validCheck)
+    return np.array(validCheck,
+            dtype=[
+                ('interviewer', 'i4'),
+                ('stddev', 'f4'),
+                ('rating', 'f4'),
+                ('interviews', 'i4'),
+            ])
 
 def printStats(loops, comparisons, candidates):
     nLoops = len(loops)
