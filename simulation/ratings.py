@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 import math
 import sys
+from graphviz import Digraph
 
 NInterviewer = 50
 NInterviewPerLoop = 3
@@ -32,7 +33,7 @@ def main():
        if avgDiff < .001:
            sys.stderr.write("stability achieved in %d cycles\n" % i)
            break
-    # graph2Digraph(graph)
+    graph2Digraph(graph)
     printScoreComparison(interviewers, graph)
 
 def printScoreComparison(interviewers, graph):
@@ -142,17 +143,17 @@ def normalize(nodes):
     return nodes
 
 def graph2Digraph(graph, printEq=False):
-    print "digraph {"
+    dot = Digraph()
     for _, node in graph.iteritems():
+        dot.node(str(node.n), "%d (%f)" % (node.n, node.v))
         # point toward greater
         # x<y <1
         for e in node.e:
             if e.v < 0:
-                print "%d -> %d" % (node.n, e.t.n)
+                dot.edge(str(node.n), str(e.t.n))
             elif e.v == 0 and node.n < e.t.n and printEq:
-                print "%d -> %d [dir=none style=dotted]" % (node.n, e.t.n)
-        print '%d [label="%d (%f)"]' % (node.n, node.n, node.v)
-    print "}"
+                dot.edge(str(node.n), str(e.t.n), dir=None, style="dotted")
+    dot.render('dot', view=True)
 
 class Node():
     def __init__(self, n):
