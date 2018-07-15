@@ -14,7 +14,7 @@ def main():
     ratings.weightGraphUntilConverge(graph, 20)
 
     if options.graph:
-        ratings.graph2Digraph(graph, True, labels)
+        ratings.graph2Digraph(graph, False, labels)
 
 
     if options.plot:
@@ -23,6 +23,25 @@ def main():
             )
         plt.scatter(nodes['ratings'], nodes['comparisons'], s=nodes['interviews'])
         plt.show()
+
+
+
+    if options.table:
+        table = sorted(((
+                labels[n.n] if labels is not None and n.n in labels else n.n,
+                n.nI,
+                len(n.e),
+                n.v
+            )
+            for _, n in graph.iteritems()), key=lambda x:x[3])
+        print "\n".join(
+            (
+                "\t".join(
+                        (str(n), str(i), str(e), "%.3f" % r)
+                )
+                for (n,i,e,r) in table
+            )
+        )
 
 def getLabels():
     labels = {}
@@ -56,6 +75,8 @@ if __name__ == "__main__":
                       help="graph relationships")
     parser.add_option("-p", "--plot", action="store_true", dest="plot",
                       help="show plots about relationships")
+    parser.add_option("-t", "--table", action="store_true", dest="table",
+                      help="output a table of interviewrs")
     parser.add_option("--labels", dest="labels", default=labelFile,
                       help="file to pull labels from")
     parser.add_option("--loops", dest="loops", default=loopFile,

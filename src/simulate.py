@@ -8,9 +8,9 @@ import sys
 import ratings
 import names
 
-NInterviewer = 5
+NInterviewer = 250
 NInterviewPerLoop = 3
-NCandidate = 20
+NCandidate = 20*14
 Bar = 102
 InterviewerDistr = (102, 6)
 InterviewerInconsistentDistr = (0, 4)
