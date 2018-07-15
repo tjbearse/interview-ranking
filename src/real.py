@@ -8,7 +8,6 @@ labels = {}
 with open('real/labels.tsv', 'r') as f:
     for l in f:
         name, n = l.strip().split("\t")
-        n = int(n)
         labels[n] = name
 
 loops = []
