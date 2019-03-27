@@ -1,4 +1,5 @@
 from graphviz import Digraph
+from optparse import OptionParser
 import itertools
 import math
 import matplotlib.pyplot as plt
@@ -8,15 +9,21 @@ import sys
 import ratings
 import names
 
-NInterviewer = 250
-NInterviewPerLoop = 3
-NCandidate = 20*14
-Bar = 102
+NInterviewer = 100
+NInterviewPerLoop = 4
+NCandidate = 30*14
+# TODO these aren't modifyable from main right now, need to set them up better so they can be parameterized
+global
 InterviewerDistr = (102, 6)
 InterviewerInconsistentDistr = (0, 4)
 CandidateDistr = (100, 7)
 
-def main():
+def main(options):
+    if options.interviewerStr:
+        mean, stddev = options.interviewerStr.strip().split(',')
+        InterviewerDistr = (mean, stddev)
+        print InterviewerDistr
+
     np.random.seed(1)
     interviewers = list([Interviewer() for i in range(NInterviewer)])
     candidates = [getCandidate() for i in range(NCandidate)]
@@ -30,14 +37,10 @@ def main():
         loops.append(loop)
 
     # print debrief (anon)
-    print "\n\n".join([ # separate loops by empty line
-            "\n".join( # join verdicts into a loop string
-            map( # verdicts to strings
-                lambda (i, v):
-                    "%s\t%s" % (i.name, "Yes" if v else "No"),
-                loop
-            ))
-        for loop in loops])
+    if options.debrief:
+        writeDebrief(loops, options.debrief)
+    if options.internals:
+        writeInternals(interviewers, options.internals)
 
     # We have to turn interviewer reference into a string
     # strLoops = list(([(i.name,v) for (i,v) in loop] for loop in loops))
@@ -51,6 +54,31 @@ def graphScores(scores):
     plt.xlabel('rating')
     plt.ylabel('stddev')
     plt.show()
+
+def writeDebrief(loops, fileName):
+    with open(fileName, 'w') as f:
+        f.write("\n\n".join([ # separate loops by empty line
+                "\n".join( # join verdicts into a loop string
+                map( # verdicts to strings
+                    lambda (i, v):
+                        "%s\t%s" % (i.name, "Yes" if v else "No"),
+                    loop
+                ))
+            for loop in loops])
+        )
+
+def writeInternals(interviewers, fileName):
+    with open(fileName, 'w') as f:
+        f.write("\n".join([
+            "InterviewerDistr\t%d\t%d" % InterviewerDistr,
+            "InterviewerInconsistentDistr\t%d\t%d" % InterviewerInconsistentDistr,
+            "CandidateDistr\t%d\t%d" % CandidateDistr,
+        ]) + "\n\n")
+        f.write("\t".join(['name', 'bar', 'nYes', 'nNo']) + "\n")
+        for i in interviewers:
+            nYes = len([True for v in i.verdicts if v[1]])
+            nNo = len(i.verdicts) - nYes
+            f.write("%s\t%.1f\t%d\t%d\n" % (i.name, i.bar, nYes, nNo))
 
 def buildScoreComparison(interviewers, graph):
     validCheck = [ (
@@ -75,7 +103,9 @@ class Interviewer():
     def __init__(self):
         self.n = next(Interviewer.iNum)
         self.name = next(Interviewer.Names)
+        print InterviewerDistr
         self.bar = np.random.normal(*InterviewerDistr)
+        self.verdicts = []
     def __str__(self):
         return str(self.n)
     def __le__(self, other):
@@ -89,10 +119,20 @@ class Interviewer():
 
     def interview(self, candidate):
         barFlake = np.random.normal(*InterviewerInconsistentDistr)
-        return candidate >= (self.bar + barFlake)
+        ret = candidate >= (self.bar + barFlake)
+        self.verdicts.append((candidate, ret))
+        return ret
 
 def getCandidate():
     return np.random.normal(*CandidateDistr)
 
 if __name__ == "__main__":
-    main()
+    parser = OptionParser()
+    parser.add_option("--debrief", dest="debrief",
+                      help="file to write debrief to")
+    parser.add_option("--internals", dest="internals",
+                      help="file to write interviewer internals to")
+    parser.add_option("--interviewer", dest="interviewerStr",
+                      help="distribution (mean,stddev)")
+    (options, args) = parser.parse_args()
+    main(options)

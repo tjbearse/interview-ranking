@@ -34,6 +34,7 @@ def main():
                 n.v
             )
             for _, n in graph.iteritems()), key=lambda x:x[3])
+        print "\t".join(["name", "n_interviews", "n_comparisons", "rating"])
         print "\n".join(
             (
                 "\t".join(
